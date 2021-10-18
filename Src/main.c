@@ -108,6 +108,8 @@ int main(void)
 	InitSPI();
 	InitUSART1();
 	BKP->RTCCR &= ~BKP_RTCCR_ASOE;
+	HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
+	HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
 //	InitUSART3();
   /* USER CODE END 2 */
 
