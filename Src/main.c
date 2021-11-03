@@ -45,7 +45,7 @@
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
-
+extern SPI_HandleTypeDef hspi1;
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
@@ -102,14 +102,15 @@ int main(void)
   MX_TIM1_Init();
   MX_IWDG_Init();
   MX_RTC_Init();
+  MX_SPI1_Init();
   /* USER CODE BEGIN 2 */
 	HAL_SPI_MspDeInit(&hspi2);
 	HAL_UART_MspDeInit(&huart1);
 	InitSPI();
 	InitUSART1();
 	BKP->RTCCR &= ~BKP_RTCCR_ASOE;
-	HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
-	HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
+//	HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
+//	HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
 //	InitUSART3();
   /* USER CODE END 2 */
 
@@ -189,8 +190,20 @@ int constrain(int x, int a, int b) {
 }
 
 void setServo(uint8_t numServo, int angle) {
-	if(numServo == 1) TIM3->CCR1 = (int)(map(angle, 0, 180, AMPLITUDE, 2400));
-	if(numServo == 2) TIM3->CCR2 = (int)(map(angle, 0, 180, AMPLITUDE, 2400));
+	uint8_t send_data[5];
+	int angleMap = (int)(map(angle, 0, 180, AMPLITUDE, 2400));
+	send_data[0] = numServo;
+	send_data[1] = (angleMap >> 24) & 0xFF;
+	send_data[2] = (angleMap >> 16) & 0xFF;
+	send_data[3] = (angleMap >> 8) & 0xFF;
+	send_data[4] = angleMap & 0xFF;
+	
+	CS_SERVO_LOW
+	HAL_SPI_Transmit(&hspi1, send_data, 5, 50);
+	CS_SERVO_HIGH
+	
+//	if(numServo == 1) TIM3->CCR1 = (int)(map(angle, 0, 180, AMPLITUDE, 2400));
+//	if(numServo == 2) TIM3->CCR2 = (int)(map(angle, 0, 180, AMPLITUDE, 2400));
 }
 
 void InitSPI (void){

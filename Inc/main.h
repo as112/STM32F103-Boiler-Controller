@@ -88,6 +88,9 @@ void Error_Handler(void);
 #define CS2_LOW    		GPIOB->BSRR |= GPIO_BSRR_BR9;
 #define CS2_HIGH   		GPIOB->BSRR |= GPIO_BSRR_BS9;
 
+#define CS_SERVO_LOW	GPIOB->BSRR |= GPIO_BSRR_BR4;
+#define CS_SERVO_HIGH	GPIOB->BSRR |= GPIO_BSRR_BS4;
+
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
@@ -97,6 +100,8 @@ void Error_Handler(void);
 #define Relay_GPIO_Port GPIOC
 #define DS18B20_Pin GPIO_PIN_2
 #define DS18B20_GPIO_Port GPIOA
+#define CS_SERVO_Pin GPIO_PIN_6
+#define CS_SERVO_GPIO_Port GPIOB
 #define CS1_Pin GPIO_PIN_8
 #define CS1_GPIO_Port GPIOB
 #define CS2_Pin GPIO_PIN_9
