@@ -51,7 +51,7 @@ extern SPI_HandleTypeDef hspi1;
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-
+uint8_t send_data[2];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -190,16 +190,13 @@ int constrain(int x, int a, int b) {
 }
 
 void setServo(uint8_t numServo, int angle) {
-	uint8_t send_data[5];
-	int angleMap = (int)(map(angle, 0, 180, AMPLITUDE, 2400));
+	
+//	int angleMap = (int)(map(angle, 0, 180, AMPLITUDE, 2400));
 	send_data[0] = numServo;
-	send_data[1] = (angleMap >> 24) & 0xFF;
-	send_data[2] = (angleMap >> 16) & 0xFF;
-	send_data[3] = (angleMap >> 8) & 0xFF;
-	send_data[4] = angleMap & 0xFF;
+	send_data[1] = (uint8_t)angle;
 	
 	CS_SERVO_LOW
-	HAL_SPI_Transmit(&hspi1, send_data, 5, 50);
+	HAL_SPI_Transmit(&hspi1, send_data, 2, 50);
 	CS_SERVO_HIGH
 	
 //	if(numServo == 1) TIM3->CCR1 = (int)(map(angle, 0, 180, AMPLITUDE, 2400));

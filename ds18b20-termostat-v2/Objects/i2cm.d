@@ -1,0 +1,12 @@
+.\objects\i2cm.o: Code\src\i2cm.c
+.\objects\i2cm.o: .\Code\inc\i2cm.h
+.\objects\i2cm.o: .\STM32F10x_StdPeriph_Driver\inc\stm32f10x_gpio.h
+.\objects\i2cm.o: .\CMSIS\inc\stm32f10x.h
+.\objects\i2cm.o: .\CMSIS\inc\stm32f10x_conf.h
+.\objects\i2cm.o: .\CMSIS\inc\core_cm3.h
+.\objects\i2cm.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
+.\objects\i2cm.o: .\CMSIS\inc\system_stm32f10x.h
+.\objects\i2cm.o: .\STM32F10x_StdPeriph_Driver\inc\stm32f10x_i2c.h
+.\objects\i2cm.o: .\CMSIS\inc\stm32f10x.h
+.\objects\i2cm.o: .\STM32F10x_StdPeriph_Driver\inc\stm32f10x_rcc.h
+.\objects\i2cm.o: .\CMSIS\inc\stm32f10x.h

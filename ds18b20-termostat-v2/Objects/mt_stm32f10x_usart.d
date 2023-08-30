@@ -1,0 +1,13 @@
+.\objects\mt_stm32f10x_usart.o: Code\src\MT_STM32F10x_USART.c
+.\objects\mt_stm32f10x_usart.o: .\Code\inc\MT_STM32F10x_USART.h
+.\objects\mt_stm32f10x_usart.o: .\CMSIS\inc\stm32f10x.h
+.\objects\mt_stm32f10x_usart.o: .\CMSIS\inc\stm32f10x_conf.h
+.\objects\mt_stm32f10x_usart.o: .\CMSIS\inc\core_cm3.h
+.\objects\mt_stm32f10x_usart.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
+.\objects\mt_stm32f10x_usart.o: .\CMSIS\inc\system_stm32f10x.h
+.\objects\mt_stm32f10x_usart.o: .\SPL\inc\stm32f10x_rcc.h
+.\objects\mt_stm32f10x_usart.o: .\CMSIS\inc\stm32f10x.h
+.\objects\mt_stm32f10x_usart.o: .\SPL\inc\stm32f10x_gpio.h
+.\objects\mt_stm32f10x_usart.o: .\CMSIS\inc\stm32f10x.h
+.\objects\mt_stm32f10x_usart.o: .\SPL\inc\stm32f10x_usart.h
+.\objects\mt_stm32f10x_usart.o: .\CMSIS\inc\stm32f10x.h

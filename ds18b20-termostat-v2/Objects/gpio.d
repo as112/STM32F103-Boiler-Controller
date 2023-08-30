@@ -1,0 +1,10 @@
+.\objects\gpio.o: Code\src\gpio.c
+.\objects\gpio.o: .\Code\inc\gpio.h
+.\objects\gpio.o: .\STM32F10x_StdPeriph_Driver\inc\stm32f10x_gpio.h
+.\objects\gpio.o: .\CMSIS\inc\stm32f10x.h
+.\objects\gpio.o: .\CMSIS\inc\stm32f10x_conf.h
+.\objects\gpio.o: .\CMSIS\inc\core_cm3.h
+.\objects\gpio.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
+.\objects\gpio.o: .\CMSIS\inc\system_stm32f10x.h
+.\objects\gpio.o: .\STM32F10x_StdPeriph_Driver\inc\stm32f10x_rcc.h
+.\objects\gpio.o: .\CMSIS\inc\stm32f10x.h

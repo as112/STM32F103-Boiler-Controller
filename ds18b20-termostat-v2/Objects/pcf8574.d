@@ -1,0 +1,13 @@
+.\objects\pcf8574.o: hd44780\src\pcf8574.c
+.\objects\pcf8574.o: .\hd44780\inc\pcf8574.h
+.\objects\pcf8574.o: .\STM32F10x_StdPeriph_Driver\inc\stm32f10x_i2c.h
+.\objects\pcf8574.o: .\CMSIS\inc\stm32f10x.h
+.\objects\pcf8574.o: .\CMSIS\inc\stm32f10x_conf.h
+.\objects\pcf8574.o: .\CMSIS\inc\core_cm3.h
+.\objects\pcf8574.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
+.\objects\pcf8574.o: .\CMSIS\inc\system_stm32f10x.h
+.\objects\pcf8574.o: .\Code\inc\i2cm.h
+.\objects\pcf8574.o: .\STM32F10x_StdPeriph_Driver\inc\stm32f10x_gpio.h
+.\objects\pcf8574.o: .\CMSIS\inc\stm32f10x.h
+.\objects\pcf8574.o: .\STM32F10x_StdPeriph_Driver\inc\stm32f10x_rcc.h
+.\objects\pcf8574.o: .\CMSIS\inc\stm32f10x.h

@@ -59,10 +59,10 @@ float spid;
 float Pod;									// pod
 float PodOld = 0;
 float dPod;
-int Riser;
+int Riser, RiserNotFiltred;
 int RiserOld;
 int dRiser;
-int Bunker;
+int Bunker, BunkerNotFiltred;
 int BunkerOld;
 int dBunker;
 
@@ -70,7 +70,7 @@ int workservoprim, workservoprimOld;
 float servoprim_speed = 0.25;
 float Obr;									// obratka
 int TempPodProm;					// temp prom
-int TrebTempPod = 60;
+int TrebTempPod = 0;
 int servosec, servosecOld;
 int servoprim;
 int preservoprim;
@@ -208,12 +208,17 @@ void MX_FREERTOS_Init(void) {
 void StartDefaultTask(void const * argument)
 {
   /* USER CODE BEGIN StartDefaultTask */
-	
+	TrebTempPod = BKP->DR1;
+	if (TrebTempPod == 0) {
+		TrebTempPod = 65;
+		BKP->DR1 = TrebTempPod;
+	}
+	int servoptimFiltr, servosecFiltr;
   /* Infinite loop */
   
   for(;;)
   {
-		if(runTask1 && runTask2 && runTask3 && runTask4 && runTask5) {
+		if(runTask1 && runTask2 && runTask4 && runTask5) { // runTask3
 			HAL_IWDG_Refresh(&hiwdg);
 			runTask1 = 0;
 			runTask2 = 0;
@@ -221,19 +226,14 @@ void StartDefaultTask(void const * argument)
 			runTask4 = 0;
 			runTask5 = 0;
 		}
-
+//		Bunker = (int)((1-0.3) * Bunker + 0.3 * BunkerNoFiltr);
 		osDelay(SECOND);
 		if(manualControl == 0) {
-			
-			if((workservoprimOld - workservoprim >= 5) || (workservoprimOld - workservoprim <= -5)) {
-				setServo(1, workservoprim);
-				workservoprimOld = workservoprim;
-			}
+			servoptimFiltr = (int)((1-0.3) * servoptimFiltr + 0.3 * workservoprim);
+			setServo(1, servoptimFiltr);
 			osDelay(SECOND);
-			if((servosecOld - servosec >= 5) || (servosecOld - servosec <= -5)) {
-				setServo(2, servosec);
-				servosecOld = servosec;
-			}
+			servosecFiltr = (int)((1-0.3) * servosecFiltr + 0.3 * servosec);
+			setServo(2, servosecFiltr);
 		}
 	}
   /* USER CODE END StartDefaultTask */
@@ -255,14 +255,15 @@ void Handler(void const * argument)
   {
 		if (uxQueueMessagesWaiting(FromNextion) != 0){
 			xQueueReceive(FromNextion, &comand, 1);
-			if(comand == 0xAA) TrebTempPod++;
-			if(comand == 0xCC) TrebTempPod--;
+			if(comand == 0xAA) BKP->DR1 = ++TrebTempPod;
+			if(comand == 0xCC) BKP->DR1 = --TrebTempPod;
 			if(comand == 0xBB) {
 //				worktime = 0;
-					timeS.Hours = 0;
-					timeS.Minutes = 0;
-					timeS.Seconds = 0;
-					HAL_RTC_SetTime(&hrtc, &timeS, RTC_FORMAT_BIN);
+				timeS.Hours = 0;
+				timeS.Minutes = 0;
+				timeS.Seconds = 0;
+				HAL_RTC_SetTime(&hrtc, &timeS, RTC_FORMAT_BIN);
+				BKP->DR2 = 1; 																			// set combustion mode to 1
 			} 
 			if(comand == 0xDD) manualControl = 1;
 			if(comand == 0xEE) manualControl = 0;
@@ -306,17 +307,24 @@ void Opros(void const * argument)
 	Ds18b20_Init(osPriorityRealtime);
 	uint8_t nasosFlag = 1;
 	NASOS_ON;
+	float tmp;
   /* Infinite loop */
   for(;;)
   {
-   	Pod = (!ds18b20[0].DataIsValid) ? 0 : ds18b20[0].Temperature;             	//get t from sensor 1
-    Obr = (!ds18b20[1].DataIsValid) ? 0 : ds18b20[1].Temperature;             	//get t from sensor 2
 		
-		if((Pod >= 1) && (Pod <= 59) && (nasosFlag == 1)) {
+//		Pod = (!ds18b20[0].DataIsValid) ? 0 : ds18b20[0].Temperature;             	// get t from sensor 1
+//		Obr = (!ds18b20[1].DataIsValid) ? 0 : ds18b20[1].Temperature;             	// get t from sensor 2
+		
+   	tmp = (!ds18b20[0].DataIsValid) ? 0 : ds18b20[0].Temperature;             	// get t from sensor 1
+		Pod = (tmp == 0) ? Pod : tmp;
+    tmp = (!ds18b20[1].DataIsValid) ? 0 : ds18b20[1].Temperature;             	// get t from sensor 2
+		Obr = (tmp == 0) ? Obr : tmp;
+		
+		if((Pod >= 1) && (Pod <= 60) && (nasosFlag == 1)) {
 			NASOS_OFF;
 			nasosFlag = 0;
 		}
-		if((Pod >= 1) && (Pod >= 60) && (nasosFlag == 0)) { 
+		if((Pod >= 1) && (Pod >= 61) && (nasosFlag == 0)) {
 			NASOS_ON;
 			nasosFlag = 1;
 		}
@@ -324,21 +332,19 @@ void Opros(void const * argument)
 			NASOS_ON;
 			nasosFlag = 1;
 		}
-		
-		Riser = ReadTempRiser();
+		RiserNotFiltred = ReadTempRiser();
+		Riser = (int)((1-0.3) * Riser + 0.3 * RiserNotFiltred);
 		GPIOC->ODR ^= GPIO_ODR_ODR13;
 		osDelay(SECOND);  
 		
-	  Bunker = ReadTempBunker();
+	  BunkerNotFiltred = ReadTempBunker();
+		Bunker = (int)((1-0.3) * Bunker + 0.3 * BunkerNotFiltred);
 		GPIOC->ODR ^= GPIO_ODR_ODR13;
 		osDelay(SECOND);
 		
-		Power = 4.2 * Rashod * 60 * (Pod - Obr);
-		
-		if(!dRiser) {
-			USART1->CR1 &= ~USART_CR1_TE;												// выключаем передатчик USART
-			USART1->CR1 |= USART_CR1_TE;												// включаем передатчик USART
-		}
+//		Power = 4.2 * Rashod * 60 * (Pod - Obr);
+		Power = (Pod - Obr) * Rashod * 60 * 1.16 / 1000;
+	
 		runTask2 = 1;
   }
   /* USER CODE END Opros */
@@ -365,11 +371,13 @@ void Zasl(void const * argument)
 			RiserOld = Riser;
 			P_preservoprim = workservoprim;
 			
-			osDelay(SECOND * 5);
-
 			calcPrimary();
-			calcSecondary();			
+			calcSecondary();
 			
+			osDelay(SECOND * 5);
+			
+			USART1->CR1 &= ~USART_CR1_TE;												// выключаем передатчик USART
+			USART1->CR1 |= USART_CR1_TE;												// включаем передатчик USART
 		}
 		else {
 			osDelay(SECOND);
@@ -525,7 +533,7 @@ void inESP (void){
 	sprintf(String.Riser, "%d", Riser);
 	sprintf(String.Bunker, "%d", Bunker);
 	sprintf(String.Rashod, "%.1f", Rashod);
-	sprintf(String.Power, "%.1f", Power/1000);
+	sprintf(String.Power, "%.1f", Power);
 	taskEXIT_CRITICAL();
 	
 	HAL_UART_Transmit(&huart3, mask, 1, 50); 
@@ -542,90 +550,79 @@ void inESP (void){
 }
 
 uint8_t BunkerStatus (void){
-	SOS = ((worktime > 14400) && (Bunker < 480) && (Bunker < BunkerOld) && (Riser/Bunker < 1.04)) ? 1 : 0;
+//	SOS = ((worktime > 14400) && (Bunker < 480) && (Bunker < BunkerOld) && (Riser/Bunker < 1.04)) ? 1 : 0;
+	SOS = 0;
 	return SOS;
 }
 
 void calcPrimary(void) {
+uint32_t mode;
+	mode = BKP->DR2;
+	workservoprim = BKP->DR3;
+	if(mode == 0) mode = 1;
 	
-	if (dPod != 0 && spid - dPod >= 2 && spid - dPod < 180 && waterFlag == 1) {
-		spid = spid - (dPod*2);
-		waterFlag = 0;
+	if((dRiser > 15) && (Riser > 680)) {
+		workservoprim = 0;
+		setServo(1, workservoprim);
+		osDelay(20 * SECOND);
+		return;
 	}
-	if (dRiser != 0 && spid - dRiser >= 2 && spid - dRiser < 180) {
-		spid = spid - dRiser;
-	}
-	if (dBunker != 0 && spid - dBunker >= 2 && spid - dBunker < 180 && bunkerFlag == 1) {
-		spid = spid - dBunker;
-		bunkerFlag = 0;
-	}
-
-	if (TrebTempPod - Pod >= 5) {
-		if (Pod - TempPodProm >= 1 ) {
-			TempPodProm = Pod + 2;
-		}
-		if (TempPodProm - Pod >= 3 ) {
-			TempPodProm = Pod + 2;
-		}
-	}
-	else {
-		TempPodProm = TrebTempPod;
-	}
-
-	tempdeficite = TempPodProm - Pod;
 	
-	if ( spid + tempdeficite > 2 && spid + tempdeficite < 180 ) {
-		spid = spid + tempdeficite;
-	}
-	if (Riser > 500 && spid - (map (Riser, 500, 1100, 2, 180) / constrain (tempdeficite, 1, 5)) >= 2) {
-		preservoprim = spid - (map (Riser, 500, 1100, 2, 180) / constrain (tempdeficite, 1, 5));
-	}
-	else {
-		preservoprim = spid;
-	}
-	if ( TrebTempPod - Pod <= 0.2 ) {
-		spid = 2;
-		preservoprim = 2;
-	}
-	D_preservoprim = P_preservoprim - preservoprim;
-
-	if ((worktime > 2400 && Riser >= 450 && Riser <= 800) || Riser >= 500){
-	workservoprim = P_preservoprim - D_preservoprim * servoprim_speed;
-	}
-	if (worktime < 2400 && Riser < 500 && Pod < 80){
-		workservoprim = P_preservoprim - (P_preservoprim - 180) * servoprim_speed;
-	}
-	if (Riser < 450  && Pod < 80){
-		workservoprim = P_preservoprim - (P_preservoprim - 180) * servoprim_speed;
-	}
-	if (Riser > 800 || Pod > 85){
-		workservoprim = P_preservoprim - (P_preservoprim - 1) * servoprim_speed;
+	switch(mode) {
+		case 1: {																																	// sushka
+			workservoprim = (Riser < 900) ? 180 : 0;
+			if(dBunker > 1) {
+				BKP->DR2 = 2;
+				workservoprim = 90;
+				setServo(1, workservoprim);
+				osDelay(20 * SECOND);
+			}
+			break;
+		}
+		case 2: {																																		// razgon do 700	
+			if(dRiser >= 8) workservoprim -= dRiser * 3;
+			if(dRiser < 0) workservoprim -= dRiser * 3;
+			if(dRiser == 0) workservoprim += 5;
+			if(Riser >= 750) BKP->DR2 = 3;
+			break;
+		}
+		case 3: {																																	// piroliz
+			if((Riser > 700) && (Riser < 850)) workservoprim -= dRiser * 3;
+			if(Riser < 700) BKP->DR2 = 2;
+			if(Riser > 850) workservoprim = 0;
+			break;
+		}
 	}
 	workservoprim = (int)constrain(workservoprim, 0, 180);
-//	sprintf(String.i1, "%d", workservoprim);
+	BKP->DR3 = workservoprim;
 }
 
 void calcSecondary(void) {
 	
-	if (RiserOld < Riser)		RizerDiff = RizerDiff + (Riser - RiserOld);
-	if (RiserOld > Riser)		RizerDiff = RizerDiff - (RiserOld - Riser);
-	RizerDiff = constrain (RizerDiff, 2, 180);
+//	if (RiserOld < Riser)		RizerDiff = RizerDiff + (Riser - RiserOld);
+//	if (RiserOld > Riser)		RizerDiff = RizerDiff - (RiserOld - Riser);
+//	RizerDiff = constrain (RizerDiff, 2, 180);
 
-	if (Riser <= 450) 	servosec = 2;
-	if (Riser > 450 && Riser <= 500) {
-		servosec = (map ( RizerDiff, 2, 180, 5, 180) + map ( Riser, 450, 500, 5, 80)) / 2;
-	}
-	if (Riser > 500 && Riser <= 600) {
-		servosec = (map ( RizerDiff, 2, 180, 60, 180) + map ( Riser, 500, 600, 60, 120)) / 2;
-	}
-	if (Riser > 600 && Riser <= 800) {
-		servosec = (map ( RizerDiff, 2, 180, 100, 180) + map ( Riser, 600, 800, 100, 160)) / 2;
-	}
-	if (Riser > 800) {
-		servosec = (map ( RizerDiff, 2, 180, 160, 180) + map ( Riser, 800, 1020, 160, 180)) / 2;
-	}
+	if (Riser <= 450) 	servosec = 0;
+	if (Riser > 450 && Riser <= 500) servosec = 60;
+	if (Riser > 500 && Riser <= 600) servosec = 100;
+	if (Riser > 600 && Riser <= 700) servosec = 150;
+	if (Riser > 700) servosec = 180;
+	
+//	if (Riser > 450 && Riser <= 500) {
+//		servosec = (map ( RizerDiff, 2, 180, 5, 180) + map ( Riser, 450, 500, 5, 80)) / 2;
+//	}
+//	if (Riser > 500 && Riser <= 600) {
+//		servosec = (map ( RizerDiff, 2, 180, 60, 180) + map ( Riser, 500, 600, 60, 120)) / 2;
+//	}
+//	if (Riser > 600 && Riser <= 800) {
+//		servosec = (map ( RizerDiff, 2, 180, 100, 180) + map ( Riser, 600, 800, 100, 160)) / 2;
+//	}
+//	if (Riser > 800) {
+//		servosec = (map ( RizerDiff, 2, 180, 160, 180) + map ( Riser, 800, 1020, 160, 180)) / 2;
+//	}
+
 	servosec = constrain (servosec, 0, 180);
-//	sprintf(String.i2, "%d", servosec);
 }
 
 /* USER CODE END Application */
